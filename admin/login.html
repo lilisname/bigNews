@@ -86,6 +86,7 @@
             $('.modal-body>p').text(backData.msg)
             $('#myModal').modal()
             if (backData.code == 200) {
+              window.localStorage.setItem("token", backData.token);
               $('#myModal').on('hidden.bs.modal', function (e) {
                 window.location.href = './index.html'
               })
