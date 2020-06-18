@@ -26,4 +26,5 @@
 
     //暴露接口
     w.BigNew = BigNew;
+
 })(window);
