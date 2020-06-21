@@ -208,7 +208,113 @@
     <!-- 引入模板引擎js文件 -->
     <script src="./js/template-web.js"></script>
     <script src="./js/jquery-1.12.4.min.js"></script>
+    <script id="moban1" type="text/html">
+        <div class="article_info">{{data.author}} 发布于 {{data.date}}{{data.time}}&nbsp;&nbsp;&nbsp;分类:
+            {{data.category}}&nbsp;&nbsp;&nbsp;阅读:
+            ({{data.read}})&nbsp;&nbsp;&nbsp;评论: ({{data.comments}})</div>
+    </script>
+    <script id="moban2" type="text/html">
+        {{each data v}}
 
+        <div class="comment_detail_list">
+            <div class="person_pic fl">{{v.author.substring(0,1)}}</div>
+            <div class="name_time fl"><b>{{v.author}}</b><span>{{v.date}}</span></div>
+            <div class="comment_text fl">
+                {{v.content}}
+            </div>
+        </div>
+        {{/each}}
+    </script>
+    <script>
+        $(function () {
+            // 先拿到尾部id
+            var articleID = window.location.search.split("=")[1]
+            console.log(articleID);
+            // 拿到id发送请求，加载页面
+            $.ajax({
+                url: 'http://localhost:8080/api/v1/index/article',
+                data: {
+                    id: articleID
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        // var reshtml = template('moban1', backData)
+                        // $('.setfr').html(reshtml)
+                        $('.breadcrumb>a:eq(0)').attr('href', './index.html')
+                        // 分类
+                        $('.breadcrumb>a:eq(1)').attr('href', './article.html?id=' +
+                            backData.data.category)
+                        // 标题
+                        $('.article_title').text(backData.data.title)
+                        // 内容
+                        $('.article_con').html(backData.data.content)
+                        // 作者时间评论
+                        $('.article_info').html(template('moban1', backData))
+                        if (backData.data.prev == null) {
+                            $('.article_links>a:eq(0)').text('没有上一篇')
+                        } else {
+                            $('.article_links>a:eq(0)').attr('href', "./article.html?id=" +
+                                backData.data.prev.id)
+                            $('.article_links>a:eq(0)').text(backData.data.prev.title)
+                        }
+                        if (backData.data.next == null) {
+                            $('.article_links>a:eq(1)').text('没有下一篇')
+                        } else {
+                            $('.article_links>a:eq(1)').attr('href', "./article.html?id=" +
+                                backData.data.next.id)
+                            $('.article_links>a:eq(1)').text(backData.data.next.title)
+
+                        }
+
+
+                    }
+                }
+            })
+            // 发表评论
+            // 拿到输入框内容
+            $('.comment_sub').on('click', function (e) {
+                e.preventDefault()
+                var commentName = $('.comment_name').val().trim()
+                var commentSub = $('.comment_sub').val().trim()
+                if (commentSub == "" || commentName == "") {
+                    alert('请输入正确格式')
+                    return
+                }
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8080/api/v1/index/post_comment',
+                    data: {
+                        author: commentName,
+                        content: commentSub,
+                        articleId: articleID
+                    },
+                    success: function (backData) {
+                        console.log(backData);
+                        if (backData.code == 201) {
+                            alert(backData.msg+'等待管理员审核')
+                            $('.comment_name').val("")
+                            $('.comment_sub').val("")
+                        }
+                    }
+                })
+            })
+            // 加载评论模板
+            $.ajax({
+                url: 'http://localhost:8080/api/v1/index/get_comment',
+                data: {
+                    articleId: articleID
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        var reshtml = template('moban2', backData)
+                        $('.comment_list_con').html(reshtml)
+                    }
+                }
+            })
+        })
+    </script>
 </body>
 
 </html>

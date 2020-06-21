@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="css/main.css">
   <script src="./libs/jquery-1.12.4.min.js"></script>
   <script src="./libs/template-web.js"></script>
+  <!-- 插件 -->
+  <script src="./libs/jquery.twbsPagination.js"></script>
+  <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
 </head>
 
 <body>
@@ -142,24 +145,146 @@
         </tbody>
       </table>
       <div class="row text-center">
-        <ul class="pagination pagination-sm">
-          <li class="page-item first disabled"><a href="#" class="page-link">首页</a></li>
-          <li class="page-item prev disabled"><a href="#" class="page-link">上一页</a></li>
-          <li class="page-item active"><a href="#" class="page-link">1</a></li>
-          <li class="page-item"><a href="#" class="page-link">2</a></li>
-          <li class="page-item"><a href="#" class="page-link">3</a></li>
-          <li class="page-item"><a href="#" class="page-link">4</a></li>
-          <li class="page-item"><a href="#" class="page-link">5</a></li>
-          <li class="page-item"><a href="#" class="page-link">6</a></li>
-          <li class="page-item"><a href="#" class="page-link">7</a></li>
-          <li class="page-item next"><a href="#" class="page-link">下一页</a></li>
-          <li class="page-item last"><a href="#" class="page-link">尾页</a></li>
-        </ul>
         <ul id="pagination" class="pagination-sm"></ul>
       </div>
 
     </div>
   </div>
+  <script src="./libs/http.js"></script>
+  <script src="./libs/template-web.js"></script>
+  <script id="moban" type="text/html">
+    {{each data.data v}}
+    {{if v.state=='待审核'}}
+    <tr class="danger">
+      {{else}}
+    <tr>
+      {{/if}}
+      <td>{{v.author}}</td>
+      <td>{{v.content}}</td>
+      <td>《{{v.title}}》</td>
+      <td>{{v.date}} {{v.time}}</td>
+      <td>{{v.state}}</td>
+      <td class="text-center">
+        {{if v.state=='待审核'}}
+        <a href="javascript:void(0);;" data-id={{v.id}} class="btn btn-info btn-xs btn-admit">批准</a>
+        {{else if  v.state=='已通过'}}
+        <a href="javascript:void(0);;" data-id={{v.id}} class="btn btn-warning btn-xs btn-reject">拒绝</a>
+        {{/if}}
+        <a href="javascript:void(0);;" data-id={{v.id}} class="btn btn-danger btn-xs btn-delete">删除</a>
+      </td>
+    </tr>
+    {{/each}}
+  </script>
+  <script>
+    $(function () {
+      var ipage = 1
+      // 加载评论
+      function getdate(page, callback) {
+        $.ajax({
+          url: BigNew.comment_list,
+          data: {
+            page: ipage, //当前页码
+            perpage: 4, //显示条数
+          },
+          success: function (backData) {
+            // console.log(backData);
+            if (backData.code == 200) {
+              var reshtml = template('moban', backData)
+              $('tbody').html(reshtml)
+              // 如果评论总数不为零，有回调函数
+              if (backData.data.data.length != 0 && callback != null) {
+                callback(backData);
+              } else if (backData.data.totalPage == ipage - 1 &&
+                backData.data.data.length == 0) {
+                ipage -= 1;
+                //重新生成页码条
+                $('#pagination').twbsPagination(
+                  'changeTotalPages',
+                  backData.data.totalPage,
+                  ipage);
+              }
+              // 分页插件
+              $('#pagination').twbsPagination({
+                totalPages: backData.data.totalPage, //总页数
+                visiblePages: 7,
+                first: '首页',
+                prev: '上一页',
+                next: '下一页',
+                last: '尾页',
+                onPageClick: function (event, page) {
+                  //给myPage赋值,值就是当前点击的整个页码
+                  ipage = page;
+                  //把当前点击的页码传进去. 调用方法.
+                  getdate(page, null);
+                }
+              })
+            }
+          }
+        })
+      }
+      getdate()
+      // 通过
+      $('tbody').on('click', '.btn-admit', function () {
+        var id = $(this).attr('data-id')
+        $.ajax({
+          type: 'post',
+          url: BigNew.comment_pass,
+          data: {
+            id: id
+          },
+          success: function (backData) {
+            // console.log(backData);
+            if (backData.code == 200) {
+              alert(backData.msg)
+              getdate(ipage, null)
+            }
+          }
+        })
+      })
+      // 拒绝
+      $('tbody').on('click', '.btn-reject', function () {
+        var id = $(this).attr('data-id')
+        $.ajax({
+          type: 'post',
+          url: BigNew.comment_reject,
+          data: {
+            id: id
+          },
+          success: function (backData) {
+            // console.log(backData);
+            if (backData.code == 200) {
+              alert(backData.msg)
+              getdate(ipage, null)
+            }
+          }
+        })
+      })
+      // 删除
+      $('tbody').on('click', '.btn-delete', function () {
+        var id = $(this).attr('data-id')
+        $.ajax({
+          type: 'post',
+          url: BigNew.comment_delete,
+          data: {
+            id: id
+          },
+          success: function (backData) {
+            // console.log(backData);
+            if (backData.code == 200) {
+              alert(backData.msg)
+              // 删除需要更新页码变化，回调函数
+              getdate(ipage, function (sData) {
+                $('#pagination').twbsPagination(
+                  'changeTotalPages',
+                  sData.data.totalPage, 
+                  ipage)
+              })
+            }
+          }
+        })
+      })
+    })
+  </script>
 </body>
 
 </html>

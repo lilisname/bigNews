@@ -150,9 +150,12 @@
                 e.preventDefault()
                 // 用fd--注意name属性和补足两个属性
                 var fd = new FormData($('form')[0])
-                fd.append('state', '已修改')
+                fd.append('state', '已发布')
                 fd.append('content', editor.txt.html())
+                // ------这个地方要改的是之前获取的id----------
+                fd.append('id', nowid);
                 $.ajax({
+                    type: 'post',
                     url: BigNew.article_edit,
                     data: fd,
                     contentType: false,
@@ -161,7 +164,7 @@
                         console.log(backData);
                         if (backData.code == 200) {
                             alert(backData.msg)
-                            window.location.href = './article_edit.html'
+                            window.location.href = './article_list.html'
                         }
                     }
                 })
@@ -174,6 +177,7 @@
                 // fd.append('state', '已修改')
                 fd.append('content', editor.txt.html())
                 $.ajax({
+                    type: 'post',
                     url: BigNew.article_edit,
                     data: fd,
                     contentType: false,
@@ -182,7 +186,7 @@
                         console.log(backData);
                         if (backData.code == 200) {
                             alert(backData.msg)
-                            window.location.href = './article_edit.html'
+                            window.location.href = './article_list.html'
                         }
                     }
                 })
